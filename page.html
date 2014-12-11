@@ -1,0 +1,159 @@
+<!doctype html>
+<html class="no-js">
+
+<head>
+  <title>Ratpack - Setup - 0.9.11</title>
+  
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href="css/normalize.css" rel="stylesheet" type="text/css">
+        <!--[if lt IE 8]><link href="css/minimal.css" rel="stylesheet" type="text/css"><![endif]-->
+        <!--[if gt IE 7]><!--><link href="css/stylesheet.css" rel="stylesheet" type="text/css"><!--<![endif]-->
+        <script src="js/manual.js"></script>
+        <script src="js/import.js"></script>
+      
+</head>
+
+<body>
+
+  <header id="page-header">
+    <div class="ratpack-logo small">
+      <h1><a href="http://www.ratpack.io">Ratpack</a></h1>
+    </div>
+  </header>
+
+  <p style="text-align: center">This manual is a work in progress and is currently incomplete.<br/>If you'd like to help improve it, and we hope you do, please see <a href="https://github.com/ratpack/ratpack/blob/master/ratpack-manual/README.md#the-ratpack-manual">the README</a>.</p>
+
+  <nav class="pagination">
+    <ul>
+      <li class="prev"><a href="intro.html" rel="prev">Introduction</a></li>
+      <li class="index"><a href="index.html" rel="index">Index</a></li>
+      <li class="next"><a href="architecture.html" rel="next">Architecture</a></li>
+    </ul>
+  </nav>
+
+  <nav class="toc page-toc">
+    <ul><li><span class="toc_number">2</span><a href="setup.html#setup">Setup</a><ul><li><span class="toc_number">2.1</span><a href="setup.html#using_the_gradle_plugins">Using the Gradle plugin(s)</a><ul><li><span class="toc_number">2.1.1</span><a href="setup.html#using_the_gradle_java_plugin">Using the Gradle Java plugin</a></li><li><span class="toc_number">2.1.2</span><a href="setup.html#using_the_gradle_groovy_plugin">Using the Gradle Groovy plugin</a></li></ul></li><li><span class="toc_number">2.2</span><a href="setup.html#using_lazybones_project_templates">Using Lazybones project templates</a></li></ul></li></ul>
+  </nav>
+
+  <article class="manual">
+    <section class="chapter">
+      <h1><span id='setup'>2</span> <a href="#setup">Setup</a></h1><p>Ratpack is purely a runtime. There is no installable package. To build Ratpack applications, you can use any JVM build tool. The Ratpack project provides specific support for <a href="http://www.gradle.org">Gradle</a> through plugins, but any could be used.</p><p>Ratpack is published as a set of library JARs. The <code>ratpack-core</code> library is the only strictly required library. Others such as <code>ratpack-groovy</code>, <code>ratpack-guice</code>, <code>ratpack-jackson</code>, <code>ratpack-test</code> etc. are optional.</p><p>With Ratpack on the classpath, you can use the API described in the next chapter to launch the application.</p><h2><span id='using_the_gradle_plugins'>2.1</span> <a href="#using_the_gradle_plugins">Using the Gradle plugin(s)</a></h2><p>First, <a href="http://www.gradle.org/docs/current/userguide/installation.html">install Gradle</a> if you haven&rsquo;t already. On Mac OS X, if you have <a href="http://brew.sh/">Homebrew</a> installed, you can simply run <code>brew install gradle</code>.</p><h3><span id='using_the_gradle_java_plugin'>2.1.1</span> <a href="#using_the_gradle_java_plugin">Using the Gradle Java plugin</a></h3><p>Create a <code>build.gradle</code> file with the following contents:</p>
+<pre><code class="language-groovy gradle">buildscript {
+  repositories {
+    jcenter()
+  }
+  dependencies {
+    classpath &quot;io.ratpack:ratpack-gradle:0.9.11&quot;
+  }
+}
+
+apply plugin: &quot;io.ratpack.ratpack-java&quot;
+apply plugin: &quot;idea&quot;
+
+repositories {
+  jcenter()
+}
+
+dependencies {
+  runtime &quot;org.slf4j:slf4j-simple:1.7.5&quot;
+}
+</code></pre><p>Create directories <code>src/ratpack</code> and <code>src/main/java</code>.</p><p>If desired, run <code>gradle idea</code> to generate project files for IntelliJ and open the project.</p><p>Create a <code>src/ratpack/ratpack.properties</code> file with the following contents:</p>
+<pre><code>handlerFactory=AppHandlerFactory
+</code></pre><p>Create a <code>src/main/java/AppHandlerFactory.java</code> with the following contents:</p>
+<pre><code class="language-java">import ratpack.handling.Context;
+import ratpack.handling.Handler;
+import ratpack.launch.HandlerFactory;
+import ratpack.launch.LaunchConfig;
+
+import static ratpack.handling.Handlers.*;
+
+public class AppHandlerFactory implements HandlerFactory {
+  @Override
+  public Handler create(LaunchConfig launchConfig) throws Exception {
+    return chain(
+      path(&quot;foo&quot;, new Handler() {
+          @Override
+          public void handle(Context context) {
+              context.render(&quot;from the foo handler&quot;);
+          }
+      }),
+      path(&quot;bar&quot;, new Handler() {
+        @Override
+        public void handle(Context context) throws Exception {
+          context.render(&quot;from the bar handler&quot;);
+        }
+      })
+    );
+  }
+}
+</code></pre><p>Run the project by running <code>gradle run</code>, or create a distribution archive by running <code>gradle distZip</code>.</p><p>For further information on using Ratpack with Gradle, please the <a href="gradle.html">Gradle chapter</a>.</p><h3><span id='using_the_gradle_groovy_plugin'>2.1.2</span> <a href="#using_the_gradle_groovy_plugin">Using the Gradle Groovy plugin</a></h3><p>Create a <code>build.gradle</code> file with the following contents:</p>
+<pre><code class="language-groovy gradle">buildscript {
+  repositories {
+    jcenter()
+  }
+  dependencies {
+    classpath &quot;io.ratpack:ratpack-gradle:0.9.11&quot;
+  }
+}
+
+apply plugin: &quot;io.ratpack.ratpack-groovy&quot;
+apply plugin: &quot;idea&quot;
+
+repositories {
+  jcenter()
+}
+
+dependencies {
+  runtime &quot;org.slf4j:slf4j-simple:1.7.5&quot;
+}
+</code></pre><p>Create directories <code>src/ratpack</code> and <code>src/main/groovy</code>.</p><p>If desired, run <code>gradle idea</code> to generate project files for IntelliJ and open the project.</p><p>Create a <code>src/ratpack/ratpack.groovy</code> file with the following contents:</p>
+<pre><code class="language-groovy">import static ratpack.groovy.Groovy.ratpack
+import groovy.json.JsonSlurper
+
+import groovy.json.JsonOutput
+
+
+ratpack {
+    handlers {
+        get(&quot;foo&quot;) {
+            render &quot;from the foo handler&quot;
+        }
+        get(&quot;bar&quot;) {
+            render &quot;from the bar handler&quot;
+        }
+    }
+}
+</code></pre><p>Run the project by running <code>gradle run</code>, or create a distribution archive by running <code>gradle distZip</code>.</p><p>For further information on using Ratpack with Gradle and Groovy, please the <a href="gradle.html">Gradle</a> and <a href="groovy.html">Groovy</a> chapters.</p><h2><span id='using_lazybones_project_templates'>2.2</span> <a href="#using_lazybones_project_templates">Using Lazybones project templates</a></h2><p><a href="https://github.com/pledbrook/lazybones">Lazybones</a> is a command line tool that allows you to generate a project structure for any framework based on pre-defined templates.</p><p>Ratpack&rsquo;s Lazybones templates can be found on <a href="https://bintray.com">Bintray</a> in the <a href="https://bintray.com/ratpack/lazybones">ratpack/lazybones repository</a>. Templates are published with each Ratpack release and template versions are aligned with Ratpack release versions. There are different types of Ratpack templates available, listed in the repository. See the description of each for details.</p><p>See the <a href="https://github.com/pledbrook/lazybones#running-it">Lazybones documentation</a> for help with installing Lazybones.</p><p>Lazybones commands are in the format&hellip;</p>
+<pre><code class="language-bash">lazybones create &lt;ratpack template&gt; &lt;ratpack version&gt; &lt;app name&gt;
+</code></pre><p>With Lazybones installed, creating a new Ratpack application is as easy as…</p>
+<pre><code class="language-bash">lazybones create ratpack my-ratpack-app
+cd my-ratpack-app
+./gradlew run
+</code></pre><p>This will use the latest available version of Ratpack. If a specific version is required…</p>
+<pre><code class="language-bash">lazybones create ratpack x.x.x my-ratpack-app
+cd my-ratpack-app
+./gradlew run
+</code></pre><p>Where <code>x.x.x</code> is a valid template version. See the <a href="https://bintray.com/ratpack/lazybones/ratpack-template/view">Bintray template repository</a> for all available template versions.</p>
+    </section>
+  </article>
+
+  <nav class="pagination">
+    <ul>
+      <li class="prev"><a href="intro.html" rel="prev">Introduction</a></li>
+      <li class="index"><a href="index.html" rel="index">Index</a></li>
+      <li class="next"><a href="architecture.html" rel="next">Architecture</a></li>
+    </ul>
+  </nav>
+
+  <footer id="page-footer"><div class="content">
+        <h2>Ratpack Manual - 0.9.11 - December, 2014</h2>
+        <p>
+          <a href="http://www.ratpack.io">www.ratpack.io</a><br>
+          Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>
+        </p>
+      </div></footer>
+</body>
+</html>
+
+
