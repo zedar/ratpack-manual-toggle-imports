@@ -33,12 +33,21 @@ function toggleImports(context, action, callback) {
           .each(function(jdx, el) {
             if (action === "hide" && firstEntry) {
               var uid = _uniqueId("showImports-");
-              $(el).before("<span class=\"token keyword\" id=\"" + uid + "\">import ...\n\n</span>");
+              $(el).before("<span class=\"token keyword gutter-folded\" id=\"" + uid + "\">import ...\n\n</span>");
               $("#" + uid).css("cursor", "pointer").click(function() {
                 if (typeof callback === "function") {
                   callback(context, "#" + uid);
                 }
               });
+              if ($(el).hasClass("gutter-open")) {
+                $(el).removeClass("gutter-open");
+              }
+              firstEntry = false;
+            }
+            else if (action === "show" && firstEntry) {
+              if (!$(el).hasClass("gutter-open")) {
+                $(el).addClass("gutter-open");
+              }
               firstEntry = false;
             }
             var t = [el];
