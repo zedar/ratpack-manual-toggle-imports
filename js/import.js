@@ -1,83 +1,85 @@
-/**
- *  Simple unique id generator
- */
-function _uniqueId(base) {
-  // check to see if statis id_count has been defined
-  if (typeof _uniqueId.id_count === "undefined") {
-      _uniqueId.id_count = 0;
-  }
-  else {
-    ++_uniqueId.id_count;
-  }
-  return (base ? base : "ui-") + (++_uniqueId.id_count);
-}
+(function($) {
+  // JQuery plugin - simple unique id generator
+  var id_count = 0;
+  $.rpkUniqueId = function(base) {
+    return (base ? base : "ui-") + (++id_count);
+  };
+})(jQuery);
 
-/**
- *  Show/hide imports in java or groovy code snippets
- *  @param context  - one of: java, groovy
- *  @param action   - one of: show, hide
- */
-function toggleImports(context, action, callback) {
-  if (!context || $.inArray(context, ["java", "groovy"]) === -1) {
-    return;
-  }
-  if (!action || $.inArray(action, ["show", "hide"]) === -1) {
-    return;
-  }
+(function($) {
+  // jQuery to show and hide imports in java/groovy code samples
+  $.rpkToggleImports = function(options) {
+    // default options
+    var settings = $.extend({
+      lang:   "java",   // could be "java" | "groovy"
+      action: "hide",   // could be "hide" | "show"
+      delEl:  null
+    }, options);
+    var langs = ["java", "groovy"],
+        actions = ["hide", "show"];
 
-  $("code.language-" + context).each(function(idx) {
-    var firstEntry = true;
-    $(this)
-      .children("span.token.keyword")
-        .filter(function() { return $(this).text() === "import"; })
-          .each(function(jdx, el) {
-            if (action === "hide" && firstEntry) {
-              var uid = _uniqueId("showImports-");
-              $(el).before("<span class=\"token keyword gutter-folded\" id=\"" + uid + "\">import ...\n\n</span>");
-              $("#" + uid).css("cursor", "pointer").click(function() {
-                if (typeof callback === "function") {
-                  callback(context, "#" + uid);
+    if ($.inArray(settings.lang, langs) == -1 ||
+        $.inArray(settings.action, actions) == -1) {
+      return;
+    }
+
+    // delete fake import ... DOM element
+    if (settings.delEl) {
+      $(settings.delEl).remove();
+      settings.delEl = null;
+    }
+
+    $("code.language-" + settings.lang).each(function(idx) {
+      var firstEntry = true;
+      $(this)
+        .children("span.token.keyword")
+          .filter(function() { return $(this).text() === "import"; })
+            .each(function(idxEl, el) {
+              var $el = $(el);
+              if (settings.action === "hide" && firstEntry) {
+                var uid = $.rpkUniqueId("showImports-");
+                if ($el.hasClass("gutter-open")) {
+                  $el.removeClass("gutter-open");
                 }
-              });
-              if ($(el).hasClass("gutter-open")) {
-                $(el).removeClass("gutter-open");
+                $el.before("<span class=\"token keyword gutter-folded\" id=\"" + uid + "\">import ...\n\n</span>");
+                $("#" + uid).css("cursor", "pointer").click(function() {
+                  $.rpkToggleImports({lang: settings.lang, action: "show", delEl: "#"+uid});
+                });
+                firstEntry = false;
               }
-              firstEntry = false;
-            }
-            else if (action === "show" && firstEntry) {
-              if (!$(el).hasClass("gutter-open")) {
-                $(el).addClass("gutter-open");
-              }
-              firstEntry = false;
-            }
-            var t = [el];
-            var l = $(el).siblings().length;
-            var _continue = l;
-            var n = el;
-            while (_continue) {
-              var nes = n.nextElementSibling;
-              if (action === "hide" && n.nextSibling && n.nextSibling.nodeType === 3) {
-                var txt = n.nextSibling.textContent;
-                if (txt) {
-                  n.nextSibling.textContent = "";
-                  $(n).after("<span>" + txt + "</span>");
-                  t[t.length] = n.nextElementSibling;
+              else if (settings.action === "show" && firstEntry) {
+                if (!$el.hasClass("gutter-open")) {
+                  $el.addClass("gutter-open");
                 }
+                firstEntry = false;
               }
-              if (nes) {
-                t[t.length] = nes;
-                var ns = nes.nextSibling, 
+              var els = [el]; // array of DOM elements to hide/show
+              var nSiblings = $el.siblings().length;  // get num of siblings
+              var nEl = el;
+              // limit inifinite loop to number of siblings
+              while (nSiblings >= 0) {
+                var nElS = nEl.nextElementSibling;
+                // if next sibling is text, not DOM node
+                if (settings.action === "hide" && nEl.nextSibling && nEl.nextSibling.nodeType === 3) {
+                  var txt = nEl.nextSibling.textContent;
+                  if (txt) {
+                    nEl.nextSibling.textContent = "";
+                    $(nEl).after("<span>" + txt + "</span>");
+                    els[els.length] = nEl.nextElementSibling;
+                  }
+                }
+                if (!nElS) {
+                  break;
+                }
+                els[els.length] = nElS;
+                var ns = nElS.nextSibling, 
                     nsIsText = ns && ns.nodeType === 3 && ns.textContent;
 
-                if (context === "java" && $(nes).text() === ";" ||
-                    context === "groovy" && $(nes).text().indexOf("\n") >= 0 ||
-                    context === "groovy" && nsIsText) {
-                  if (action === "hide" && 
-                        nes.nextSibling &&
-                          nes.nextSibling.nodeType === 3 &&
-                            nes.nextSibling.textContent &&
-                              nes.nextSibling.textContent.indexOf("\n") >= 0) {
-                    var txt2 = nes.nextSibling.textContent, crIdx = txt2.indexOf("\n");
+                if (settings.lang === "java" && $(nElS).text() === ";" ||
+                    settings.lang === "groovy" && $(nElS).text().indexOf("\n") >= 0 ||
+                    settings.lang === "groovy" && nsIsText) {
+                  if (settings.action === "hide" && nsIsText && ns.textContent.indexOf("\n") >= 0) {
+                    var txt2 = ns.textContent, crIdx = txt2.indexOf("\n");
                     for (++crIdx; crIdx < txt2.length; crIdx++) {
                       if (txt2[crIdx] !== "\n") {
                         break;
@@ -86,72 +88,51 @@ function toggleImports(context, action, callback) {
                     var txt2_1 = txt2.substring(0, crIdx);
                     var txt2_2 = txt2.substring(crIdx);
                     if (txt2_2) {
-                      nes.nextSibling.textContent = txt2_2;
+                      ns.textContent = txt2_2;
                     }
                     else {
-                      nes.nextSibling.textContent = "";
+                      ns.textContent = "";
                     }
-                    $(nes).after("<span>" + txt2_1 + "</span>");
-                    t[t.length] = nes.nextElementSibling;
+                    $(nElS).after("<span>" + txt2_1 + "</span>");
+                    els[els.length] = nElS.nextElementSibling;
                     break;
                   }
-                  if (action === "show" &&
-                        nes.nextElementSibling) {
-                    var txt3 = $(nes.nextElementSibling).text();
+                  if (settings.action === "show" && nElS.nextElementSibling) {
+                    var txt3 = $(nElS.nextElementSibling).text();
                     if (txt3 && txt3.indexOf("\n") >=0) {
-                      t[t.length] = nes.nextElementSibling;
+                      els[els.length] = nElS.nextElementSibling;
                     }
                     break;
                   }
                 }
-                if ($(nes).text().indexOf("\n") >= 0) {
+                if ($(nElS).text().indexOf("\n") >= 0) {
                   break;
                 }
-                n = nes;
-                l--;
+                nEl = nElS;
+                nSiblings--;
               }
-              else {
-                break;
-              }
-            }
-            $.each(t, function(kdx, v) {
-              if (action === "hide") {
-                $(v).hide();
-              }
-              else if (action === "show") {
-                $(v)
-                  .show()
-                    .css("cursor", "pointer")
-                      .off("click")
-                        .click(function() {
-                          if (typeof callback === "function") {
-                            callback(context);
-                          }
-                        });
-              }
+              // hide/show elements
+              $.each(els, function(elsIdx, v) {
+                if (settings.action === "hide") {
+                  $(v).hide();
+                }
+                else if (settings.action === "show") {
+                  $(v)
+                    .show()
+                      .css("cursor", "pointer")
+                        .off("click")
+                          .click(function() {
+                            $.rpkToggleImports({lang: settings.lang, action: "hide"});
+                          });
+                }
+              });
             });
-          });
-  });
-}
-
-var showImports, hideImports;
-
-showImports = function(context, toggleEl) {
-  if (toggleEl) {
-    $(toggleEl).remove();
-  }
-  else {
-    return;
-  }
-  toggleImports(context, "show", hideImports);
-};
-
-hideImports = function(context) {
-  toggleImports(context, "hide", showImports);
-};
-
+    });
+  };
+})(jQuery);
+  
 $(function() {
-  hideImports("java");
-  hideImports("groovy");
+  $.rpkToggleImports({lang: "java", action: "hide"});
+  $.rpkToggleImports({lang: "groovy", action: "hide"});
 });
 
